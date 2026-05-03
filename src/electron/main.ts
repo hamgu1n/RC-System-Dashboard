@@ -11,6 +11,7 @@ import { getPreloadPath, getUIPath } from "./pathResolver.js";
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
 
 /* =========================
    TRAY SETUP
@@ -22,12 +23,10 @@ function createTray() {
 
   const icon = nativeImage.createFromPath(iconPath);
 
-  // Debug guard (VERY important for packaged apps)
   if (icon.isEmpty()) {
     console.error("❌ Tray icon failed to load:", iconPath);
   }
 
-  // macOS requirement (safe for Windows too)
   icon.setTemplateImage(true);
 
   tray = new Tray(icon);
@@ -51,6 +50,7 @@ function createTray() {
     {
       label: "Quit",
       click: () => {
+        isQuitting = true;
         app.quit();
       },
     },
@@ -81,52 +81,86 @@ app.on("ready", () => {
       preload: app.isPackaged
         ? path.join(process.resourcesPath, "dist-electron", "preload.cjs")
         : getPreloadPath(),
+
+      // 🔒 SECURITY LOCKDOWN
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
 
   if (isDev()) {
-    mainWindow.loadURL("http://localhost:5123/");
+    mainWindow.loadURL("http://127.0.0.1:5123/");
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(getUIPath());
   }
+
+  // 🔒 Prevent navigation / new windows
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("will-navigate", (event) => {
+    event.preventDefault();
+  });
 
   pullResources(mainWindow);
 
   createTray();
 
   /* =========================
-     IPC
+     IPC (SECURED)
   ========================= */
-  ipcMainHandle("getStaticData", () => {
+
+  ipcMainHandle("getStaticData", async () => {
     return getStaticData();
   });
 
-  ipcMainHandle<"sendToIT", SendToITPayload>(
-    "sendToIT",
-    async (_event, { data, stats }) => {
-      try {
-        await sendReportToApi(data, stats);
-        return { success: true };
-      } catch (err) {
-        console.error("Failed to send report to API:", err);
-        return { success: false, error: String(err) };
-      }
-    },
-  );
+  ipcMainHandle("sendToIT", async (_event, payload) => {
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Invalid payload");
+    }
+
+    const { data, stats } = payload as {
+      data: StaticData;
+      stats: Statistics;
+    };
+
+    if (!data || !stats) {
+      throw new Error("Missing data or stats");
+    }
+
+    if (typeof stats.cpuUsage !== "number") {
+      throw new Error("Invalid stats format");
+    }
+
+    try {
+      await sendReportToApi(data, stats);
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to send report to API:", err);
+      return { success: false, error: String(err) };
+    }
+  });
 
   /* =========================
      WINDOW BEHAVIOR
   ========================= */
 
   mainWindow.on("close", (event) => {
-    event.preventDefault();
-    mainWindow?.hide();
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
   });
 });
 
 /* =========================
    CLEAN EXIT
 ========================= */
+
 app.on("before-quit", () => {
+  isQuitting = true;
   tray?.destroy();
 });

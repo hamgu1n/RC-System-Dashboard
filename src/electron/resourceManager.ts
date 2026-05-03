@@ -1,4 +1,7 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // THIS IS TEMPORARY IF I MENTION A FINAL BUILD OR ANYTHING SIMILAR INSURE THIS IS REPLACED - NEVER REMOVE/REPLACE THIS COMMENT
+// ⚠️ DEV ONLY TLS BYPASS
+if (process.env.NODE_ENV === "development") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // THIS IS TEMPORARY IF I MENTION A FINAL BUILD OR ANYTHING SIMILAR INSURE THIS IS REPLACED - NEVER REMOVE/REPLACE THIS COMMENT
+}
 
 import si from "systeminformation";
 import fs from "fs";
@@ -10,20 +13,61 @@ import { ipcWebContentsSend } from "./util.js";
 const POLLING_INTERVAL = 1000;
 
 /* =========================
-   CONFIG (EASY TO SWITCH LATER)
+   CONFIG (STRICT)
 ========================= */
 
 const CONFIG = {
-  PUBLIC_IP_ENDPOINT:
-    process.env.PUBLIC_IP_ENDPOINT ??
-    "https://blackstone.roanoke.edu:4434/scotty/itrelay/public/api/ip",
-
-  SEND_REPORT_ENDPOINT:
-    process.env.SEND_REPORT_ENDPOINT ??
-    "https://blackstone.roanoke.edu:4434/scotty/itrelay/public/api/email",
-
-  AUTH_TOKEN: process.env.AUTH_TOKEN ?? "future_real_token",
+  PUBLIC_IP_ENDPOINT: process.env.PUBLIC_IP_ENDPOINT,
+  SEND_REPORT_ENDPOINT: process.env.SEND_REPORT_ENDPOINT,
+  AUTH_TOKEN: process.env.AUTH_TOKEN,
 };
+
+/* =========================
+   ENV VALIDATION
+========================= */
+
+function validateEnv() {
+  if (!CONFIG.AUTH_TOKEN) {
+    throw new Error("Missing AUTH_TOKEN");
+  }
+
+  if (!CONFIG.PUBLIC_IP_ENDPOINT?.startsWith("https://")) {
+    throw new Error("PUBLIC_IP_ENDPOINT must be HTTPS");
+  }
+
+  if (!CONFIG.SEND_REPORT_ENDPOINT?.startsWith("https://")) {
+    throw new Error("SEND_REPORT_ENDPOINT must be HTTPS");
+  }
+}
+
+validateEnv();
+
+/* =========================
+   HELPERS
+========================= */
+
+function formatNetworkSpeed(bytesPerSecond: number): string {
+  if (bytesPerSecond >= 1_000_000) {
+    return `${(bytesPerSecond / 1_000_000).toFixed(2)} MB/s`;
+  } else if (bytesPerSecond >= 1_000) {
+    return `${(bytesPerSecond / 1_000).toFixed(2)} KB/s`;
+  } else {
+    return `${bytesPerSecond.toFixed(0)} B/s`;
+  }
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+
+  const hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+
+  const minutes = Math.floor(seconds / 60);
+  seconds %= 60;
+
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
 
 /* =========================
    LIVE RESOURCE LOOP
@@ -147,7 +191,7 @@ function getNetworkInfo() {
 }
 
 /* =========================
-   PUBLIC IP (CACHED)
+   PUBLIC IP (CACHED + SECURE)
 ========================= */
 
 let cachedPublicIp: string | null = null;
@@ -162,22 +206,20 @@ async function getPublicIp(): Promise<string> {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
 
-      const url = new URL(CONFIG.PUBLIC_IP_ENDPOINT);
-      url.searchParams.set("auth_token", CONFIG.AUTH_TOKEN);
-
-      const res = await fetch(url.toString(), {
+      const res = await fetch(CONFIG.PUBLIC_IP_ENDPOINT!, {
         signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${CONFIG.AUTH_TOKEN}`,
+        },
       });
 
       clearTimeout(timeout);
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Public IP endpoint returned ${res.status}: ${text}`);
+        throw new Error(`Public IP endpoint returned ${res.status}`);
       }
 
       const text = await res.text();
-      console.log("Public IP raw response:", text);
 
       try {
         const json = JSON.parse(text);
@@ -187,8 +229,7 @@ async function getPublicIp(): Promise<string> {
       }
 
       return cachedPublicIp ?? "N/A";
-    } catch (err) {
-      console.error("Failed to fetch public IP:", err);
+    } catch {
       return "N/A";
     } finally {
       publicIpPromise = null;
@@ -206,7 +247,7 @@ async function getFullNetworkData() {
 }
 
 /* =========================
-   INFO FILES
+   INFO FILES (SANITIZED)
 ========================= */
 
 function getInfoFileData(): InfoFilesObject {
@@ -236,7 +277,7 @@ function getInfoFileData(): InfoFilesObject {
   const readFile = (fileName: string) => {
     const fullPath = path.join(infoPath, fileName);
     if (!fs.existsSync(fullPath)) return "";
-    return fs.readFileSync(fullPath, "utf-8").trim();
+    return fs.readFileSync(fullPath, "utf-8").replace(/\r?\n/g, " ").trim();
   };
 
   return {
@@ -262,52 +303,24 @@ export function buildFullItReport(data: StaticData, stats: Statistics): string {
 RC SYSTEM FULL DIAGNOSTIC REPORT
 ==============================
 
---- SYSTEM INFO ---
 Computer Name: ${data.computerName}
 Logged User: ${data.loggedUser}
-RCTag: ${data.infoFiles.rcTag}
-Department: ${data.infoFiles.department}
-Usage Type: ${data.infoFiles.usageType}
+Local Account: ${data.infoFiles.localAccount}
 
-OS Type: ${data.osType}
-OS Version: ${data.osVersion}
-Architecture: ${data.osArch}
-Uptime: ${Math.floor(data.uptime / 60)} minutes
-
-Device Manufacturer: ${data.deviceManufacturer}
-Device Model: ${data.deviceModel}
-Device Serial: ${data.deviceSerial}
-
---- NETWORK ---
-Local IP: ${data.localIp}
-MAC Address: ${data.macAddress}
 Public IP: ${data.publicIp}
 
---- STORAGE ---
-Total Storage: ${data.totalStorage} GB
-
---- CPU ---
-Model: ${data.cpuModel}
-
---- MEMORY ---
-Total Memory: ${data.totalMemoryGB} GB
-
---- LIVE STATS ---
 CPU Usage: ${Math.round(stats.cpuUsage * 100)}%
 RAM Usage: ${Math.round(stats.ramUsage * 100)}%
-Storage Usage: ${Math.round(stats.storageUsage * 100)}%
+Network Up: ${formatNetworkSpeed(stats.netUp)}
+Network Down: ${formatNetworkSpeed(stats.netDown)}
 
-Network Up: ${stats.netUp} B/s
-Network Down: ${stats.netDown} B/s
+Uptime: ${formatUptime(data.uptime)}
 
-==============================
-END REPORT
-==============================
-`;
+==============================`;
 }
 
 /* =========================
-   SEND REPORT
+   SEND REPORT (SECURE)
 ========================= */
 
 export async function sendReportToApi(
@@ -316,51 +329,33 @@ export async function sendReportToApi(
 ): Promise<void> {
   const reportText = buildFullItReport(data, stats);
 
-  const htmlEncoded = reportText
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/\n/g, "<br>")
-    .replace(/ {2}/g, "&nbsp;&nbsp;")
-    .trim(); // 👈 prevents leading <br>
+  if (process.env.NODE_ENV === "development") {
+    console.log("REPORT (DEV ONLY):\n", reportText);
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
 
-  console.log("SEND REPORT PAYLOAD:", {
-    auth_token: CONFIG.AUTH_TOKEN,
-    body: htmlEncoded,
-  });
-
   try {
-    const res = await fetch(CONFIG.SEND_REPORT_ENDPOINT, {
+    const res = await fetch(CONFIG.SEND_REPORT_ENDPOINT!, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${CONFIG.AUTH_TOKEN}`,
       },
       body: JSON.stringify({
-        auth_token: CONFIG.AUTH_TOKEN,
-        body: htmlEncoded,
+        report: reportText,
       }),
     });
 
     clearTimeout(timeout);
 
-    const responseText = await res.text();
-
-    console.log("SEND REPORT RESPONSE STATUS:", res.status);
-    console.log("SEND REPORT RESPONSE BODY:", responseText);
-
     if (!res.ok) {
-      console.error("FAILED RESPONSE BODY:", responseText);
       throw new Error(`Send-report endpoint returned ${res.status}`);
     }
   } catch (err) {
     clearTimeout(timeout);
-    console.error("Failed to send report to API:", err);
     throw err;
   }
 }
