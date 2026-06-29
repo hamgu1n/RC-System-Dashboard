@@ -13,8 +13,6 @@ dist-react
 dist-electron
 *.local
 
-.env
-.env.*
 release/
 scripts/env-values.txt
 

@@ -18,8 +18,8 @@ const STORAGE_POLLING_INTERVAL = 30000;
 ========================= */
 
 const CONFIG = {
-  PUBLIC_IP_ENDPOINT: process.env.PUBLIC_IP_ENDPOINT,
-  SEND_REPORT_ENDPOINT: process.env.SEND_REPORT_ENDPOINT,
+  PUBLIC_IP_ENDPOINT: "https://blackstone.roanoke.edu:4434/scotty/itrelay/public/api/ip",
+  SEND_REPORT_ENDPOINT: "https://blackstone.roanoke.edu:4434/scotty/itrelay/public/api/email",
   AUTH_TOKEN: process.env.AUTH_TOKEN,
 };
 
@@ -30,14 +30,6 @@ const CONFIG = {
 function validateEnv() {
   if (!CONFIG.AUTH_TOKEN) {
     throw new Error("Missing AUTH_TOKEN");
-  }
-
-  if (!CONFIG.PUBLIC_IP_ENDPOINT?.startsWith("https://")) {
-    throw new Error("PUBLIC_IP_ENDPOINT must be HTTPS");
-  }
-
-  if (!CONFIG.SEND_REPORT_ENDPOINT?.startsWith("https://")) {
-    throw new Error("SEND_REPORT_ENDPOINT must be HTTPS");
   }
 }
 
