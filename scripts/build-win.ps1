@@ -2,11 +2,8 @@
 
 $ErrorActionPreference = "Stop"
 
-# Resolve project root (parent of the scripts/ folder)
-$ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-
-# Always run from project root
-Set-Location $ProjectRoot
+# Project root is wherever the .bat launched from
+$ProjectRoot = $PWD.Path
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
