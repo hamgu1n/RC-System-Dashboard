@@ -1,12 +1,19 @@
 # RC System Information - Windows Build Setup
-# Run this script from the project root
+
+param(
+    [string]$ProjectRoot = $PSScriptRoot + "\.."
+)
 
 $ErrorActionPreference = "Stop"
+
+# Always run from project root
+Set-Location $ProjectRoot
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  RC System Information - Windows Build" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "Project root: $ProjectRoot" -ForegroundColor DarkGray
 Write-Host ""
 
 # ── 1. Check Node.js ──────────────────────────────────────────
@@ -63,13 +70,15 @@ Write-Host "Building Windows app..." -ForegroundColor Yellow
 npm run dist:win
 
 # ── 5. Done ───────────────────────────────────────────────────
+$releasePath = Join-Path $ProjectRoot "release"
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Build complete! Output is in release/" -ForegroundColor Green
+Write-Host "  Build complete!" -ForegroundColor Green
+Write-Host "  Output: $releasePath" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 
-# Open the release folder
-Start-Process explorer.exe -ArgumentList "release"
+Start-Process explorer.exe -ArgumentList $releasePath
 
 pause

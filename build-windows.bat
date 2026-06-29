@@ -1,2 +1,3 @@
 @echo off
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\build-win.ps1"
+cd /d "%~dp0"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\build-win.ps1" -ProjectRoot "%~dp0"
