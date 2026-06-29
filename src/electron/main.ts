@@ -59,7 +59,7 @@ function createTray() {
     },
   ]);
 
-  tray.setToolTip("RC System Information");
+  tray.setToolTip("RC System Dashboard");
   tray.setContextMenu(contextMenu);
 
   tray.on("click", () => {
@@ -79,7 +79,7 @@ function createTray() {
 ========================= */
 app.on("ready", () => {
   mainWindow = new BrowserWindow({
-    title: "RC System Information",
+    title: "RC System Dashboard",
     webPreferences: {
       preload: app.isPackaged
         ? path.join(process.resourcesPath, "dist-electron", "preload.cjs")

@@ -1,6 +1,7 @@
 {
   "appId": "com.h-hlioui.rc-system-info",
-  "productName": "RC System Information",
+  "productName": "RC System Dashboard",
+  "artifactName": "${productName}.${ext}",
 
   "files": ["dist-electron/**/*", "dist-react/**/*"],
 
@@ -43,7 +44,7 @@
     "installerHeaderIcon": "./assets/desktopIcon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "RC System Information"
+    "shortcutName": "RC System Dashboard"
   },
 
   "linux": {
