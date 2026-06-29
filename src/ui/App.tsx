@@ -101,7 +101,7 @@ function App() {
   return (
     <div className={`app ${darkMode ? "dark" : "light"}`}>
       {/* HEADER */}
-      <h1 className="dashboard-title">RC System Dashboard</h1>
+      <h1 className="dashboard-title">RC System Information</h1>
 
       {/* SYSTEM INFO */}
       <section className="card system-info">

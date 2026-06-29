@@ -28,7 +28,9 @@ function createTray() {
     console.error("❌ Tray icon failed to load:", iconPath);
   }
 
-  icon.setTemplateImage(true);
+  if (process.platform === "darwin") {
+    icon.setTemplateImage(true);
+  }
 
   tray = new Tray(icon);
 
@@ -57,7 +59,7 @@ function createTray() {
     },
   ]);
 
-  tray.setToolTip("RC System Dashboard");
+  tray.setToolTip("RC System Information");
   tray.setContextMenu(contextMenu);
 
   tray.on("click", () => {
@@ -77,7 +79,7 @@ function createTray() {
 ========================= */
 app.on("ready", () => {
   mainWindow = new BrowserWindow({
-    title: "RC System Dashboard",
+    title: "RC System Information",
     webPreferences: {
       preload: app.isPackaged
         ? path.join(process.resourcesPath, "dist-electron", "preload.cjs")

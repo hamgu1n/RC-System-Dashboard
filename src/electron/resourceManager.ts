@@ -69,19 +69,15 @@ function formatUptime(seconds: number): string {
 export function pullResources(mainWindow: BrowserWindow) {
   let cachedStorageUsage = 0;
 
-  const storageInterval = setInterval(async () => {
-    if (mainWindow.isDestroyed()) { clearInterval(storageInterval); return; }
+  async function pollStorage() {
+    if (mainWindow.isDestroyed()) return;
     const fsData = await si.fsSize();
     const disk = fsData[0];
     cachedStorageUsage = disk ? disk.use / 100 : 0;
-  }, STORAGE_POLLING_INTERVAL);
+  }
 
-  const interval = setInterval(async () => {
-    if (mainWindow.isDestroyed()) {
-      clearInterval(interval);
-      clearInterval(storageInterval);
-      return;
-    }
+  async function poll() {
+    if (mainWindow.isDestroyed()) return;
 
     const [cpu, mem, net] = await Promise.all([
       si.currentLoad(),
@@ -102,6 +98,24 @@ export function pullResources(mainWindow: BrowserWindow) {
     };
 
     ipcWebContentsSend("statistics", mainWindow.webContents, stats);
+  }
+
+  // Fire immediately so UI doesn't wait for the first interval
+  pollStorage();
+  poll();
+
+  const storageInterval = setInterval(() => {
+    if (mainWindow.isDestroyed()) { clearInterval(storageInterval); return; }
+    pollStorage();
+  }, STORAGE_POLLING_INTERVAL);
+
+  const interval = setInterval(() => {
+    if (mainWindow.isDestroyed()) {
+      clearInterval(interval);
+      clearInterval(storageInterval);
+      return;
+    }
+    poll();
   }, POLLING_INTERVAL);
 }
 

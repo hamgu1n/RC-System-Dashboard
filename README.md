@@ -1,6 +1,6 @@
-# RC System Information Dashboard
+# RC System Information
 
-A desktop IT diagnostics application built with Electron, React, and TypeScript.
+A desktop IT diagnostics application built with Electron, React, and TypeScript, distributed by Roanoke College Information Technology.
 
 It collects system information and sends structured reports to an internal IT system for support and asset tracking.
 
@@ -8,11 +8,11 @@ It collects system information and sends structured reports to an internal IT sy
 
 ## Features
 
-- Real-time system monitoring (CPU, RAM, Storage)
-- Device identification (serial, model, manufacturer)
-- Network information (local + public IP)
-- OS and user tracking
-- One-click IT report submission
+- Real-time system monitoring (CPU, RAM, Storage, Network)
+- Device identification (serial, model, manufacturer, RC Tag)
+- Network information (local + public IP, MAC address)
+- Owner and department tracking via local info files
+- One-click IT report submission with code verification
 - Dark mode support
 
 ---
@@ -22,18 +22,17 @@ It collects system information and sends structured reports to an internal IT sy
 1. Open the application
 2. Review system information
 3. Click **Send To IT**
-4. Wait for confirmation (Sent ✓ or Failed ✗)
+4. Enter your code when prompted
+5. Wait for confirmation (button turns green or red)
 
 ---
 
 ## What "Send To IT" Does
 
-When clicked, the app:
+When submitted, the app:
 
-- Collects full system diagnostics
-- Generates a structured report
-- Encodes it for safe transmission
-- Sends it to the internal IT API
+- Collects full system diagnostics (device, owner, network, hardware)
+- Sends a structured report to the internal IT API
 - IT receives it for support or asset tracking
 
 ---
@@ -42,27 +41,15 @@ When clicked, the app:
 
 - Internet connection required for sending reports
 - Internal IT API access required
+- Auth token must be present in `.env`
 
 ---
 
 ## Security Notes
 
-This application uses internal network services.
-
-⚠️ Development-only setting:
-
-NODE_TLS_REJECT_UNAUTHORIZED=0
-
-This must NOT be used in production builds.
-
----
-
-## Documentation
-
-Full documentation is maintained separately by the IT department.
-
-- User Guide → internal IT documentation system
-- Backend Documentation → internal engineering documentation
+- TLS verification uses the system certificate store via Electron's `net` module
+- IPC is locked to a channel whitelist with frame URL validation
+- `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`
 
 ---
 
@@ -78,4 +65,5 @@ Full documentation is maintained separately by the IT department.
 
 ## Author
 
-Haytham Rida Hlioui
+Haytham Rida Hlioui  
+Roanoke College Information Technology
