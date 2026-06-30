@@ -12,7 +12,6 @@ import { getPreloadPath, getUIPath } from "./pathResolver.js";
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let isQuitting = false;
 
 /* =========================
    TRAY SETUP
@@ -43,19 +42,10 @@ function createTray() {
         mainWindow.focus();
       },
     },
-    {
-      label: "Hide App",
-      click: () => {
-        mainWindow?.hide();
-      },
-    },
     { type: "separator" },
     {
       label: "Quit",
-      click: () => {
-        isQuitting = true;
-        app.quit();
-      },
+      click: () => app.quit(),
     },
   ]);
 
@@ -64,13 +54,8 @@ function createTray() {
 
   tray.on("click", () => {
     if (!mainWindow) return;
-
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    mainWindow.show();
+    mainWindow.focus();
   });
 }
 
@@ -155,16 +140,6 @@ app.on("ready", () => {
     }
   });
 
-  /* =========================
-     WINDOW BEHAVIOR
-  ========================= */
-
-  mainWindow.on("close", (event) => {
-    if (!isQuitting) {
-      event.preventDefault();
-      mainWindow?.hide();
-    }
-  });
 });
 
 /* =========================
@@ -172,7 +147,6 @@ app.on("ready", () => {
 ========================= */
 
 app.on("before-quit", () => {
-  isQuitting = true;
   tray?.destroy();
 });
 
