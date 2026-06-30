@@ -344,8 +344,8 @@ export function buildFullItReport(data: StaticData, stats: Statistics): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:32px auto">
     <tr>
       <td style="background:#872046;padding:14px 20px;border-radius:8px 8px 0 0;text-align:center">
-        <div style="color:#fff;font-size:16px;font-weight:700">RC System Diagnostic Report</div>
-        <div style="color:#fff;font-size:12px;margin-top:4px">${data.computerName} &mdash; ${data.loggedUser}</div>
+        <div style="color:#fff;font-size:24px;font-weight:700">RC System Diagnostic Report</div>
+        <div style="color:#fff;font-size:16px;margin-top:8px">${data.computerName} &mdash; ${data.loggedUser}</div>
       </td>
     </tr>
     <tr>
