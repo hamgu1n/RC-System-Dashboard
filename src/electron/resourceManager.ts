@@ -213,7 +213,10 @@ async function getPublicIp(): Promise<string> {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
 
-      const res = await net.fetch(CONFIG.PUBLIC_IP_ENDPOINT!, {
+      const ipUrl = new URL(CONFIG.PUBLIC_IP_ENDPOINT!);
+      ipUrl.searchParams.set("auth_token", CONFIG.AUTH_TOKEN!);
+
+      const res = await net.fetch(ipUrl.toString(), {
         signal: controller.signal,
         headers: {
           auth_token: CONFIG.AUTH_TOKEN!,
