@@ -217,12 +217,11 @@ async function getPublicIp(): Promise<string> {
       const timeout = setTimeout(() => controller.abort(), 3000);
 
       const ipUrl = new URL(CONFIG.PUBLIC_IP_ENDPOINT!);
-      ipUrl.searchParams.set("auth_token", CONFIG.AUTH_TOKEN!);
 
       const res = await net.fetch(ipUrl.toString(), {
         signal: controller.signal,
         headers: {
-          auth_token: CONFIG.AUTH_TOKEN!,
+          'x-auth-token': CONFIG.AUTH_TOKEN!,
         },
       });
 
@@ -376,9 +375,9 @@ export async function sendReportToApi(
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        "x-auth-token": CONFIG.AUTH_TOKEN!,
       },
       body: JSON.stringify({
-        auth_token: CONFIG.AUTH_TOKEN,
         body: reportText.replace(/\n/g, "<br>"),
         code,
       }),
