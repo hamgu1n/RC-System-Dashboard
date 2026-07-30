@@ -45,7 +45,8 @@
     "installerHeaderIcon": "./assets/desktopIcon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "RC System Dashboard"
+    "shortcutName": "RC System Dashboard",
+    "perMachine": true
   },
 
   "linux": {
