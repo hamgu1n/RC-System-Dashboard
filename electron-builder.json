@@ -41,12 +41,16 @@
   },
 
   "nsis": {
-    "artifactName": "${productName} Setup.${ext}",
+    "artifactName": "${productName} Installable.${ext}",
     "installerHeaderIcon": "./assets/desktopIcon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "shortcutName": "RC System Dashboard",
     "perMachine": true
+  },
+
+  "portable": {
+    "artifactName": "${productName} Portable.${ext}"
   },
 
   "linux": {
