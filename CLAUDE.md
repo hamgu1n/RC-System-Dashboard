@@ -67,7 +67,8 @@ Both API calls use `net.fetch` (Electron's network stack) which uses the system 
 
 The app reads device metadata from flat `.txt` files:
 - **Windows:** `C:/info/`
-- **Mac/Linux:** `~/info/`
+- **Mac:** `/Library/Application Support/info/`
+- **Linux:** `~/info/`
 
 Files: `RCTag.txt`, `Department.txt`, `AssignedLocationBuilding.txt`, `AssignedLocationRoom.txt`, `LocalAccount.txt`, `OwnerFirstName.txt`, `OwnerLastName.txt`, `OwnerEmail.txt`, `UsageType.txt`, `YearModel.txt`
 

@@ -76,8 +76,11 @@ function nextPollingInterval(cpuUsage: number, ramUsage: number): number {
   if (load <= LOAD_BACKOFF_FLOOR) return MIN_POLLING_INTERVAL;
   if (load >= LOAD_BACKOFF_CEILING) return MAX_POLLING_INTERVAL;
 
-  const t = (load - LOAD_BACKOFF_FLOOR) / (LOAD_BACKOFF_CEILING - LOAD_BACKOFF_FLOOR);
-  return MIN_POLLING_INTERVAL + t * (MAX_POLLING_INTERVAL - MIN_POLLING_INTERVAL);
+  const t =
+    (load - LOAD_BACKOFF_FLOOR) / (LOAD_BACKOFF_CEILING - LOAD_BACKOFF_FLOOR);
+  return (
+    MIN_POLLING_INTERVAL + t * (MAX_POLLING_INTERVAL - MIN_POLLING_INTERVAL)
+  );
 }
 
 export function pullResources(mainWindow: BrowserWindow) {
@@ -166,7 +169,8 @@ export async function getStaticData(): Promise<StaticData> {
 
   const computerName = os.hostname();
 
-  const { localIp, wifiMac, ethernetMac, publicIp } = await getFullNetworkData();
+  const { localIp, wifiMac, ethernetMac, publicIp } =
+    await getFullNetworkData();
 
   const infoFiles = getInfoFileData();
 
@@ -229,7 +233,10 @@ async function getNetworkInfo() {
   if (localIp === "N/A") {
     for (const addrs of Object.values(os.networkInterfaces())) {
       const match = addrs?.find((a) => a.family === "IPv4" && !a.internal);
-      if (match) { localIp = match.address; break; }
+      if (match) {
+        localIp = match.address;
+        break;
+      }
     }
   }
 
@@ -301,13 +308,13 @@ async function getFullNetworkData() {
 
 function getInfoFileData(): InfoFilesObject {
   let infoPath: string;
-
   if (process.platform === "win32") {
     infoPath = "C:/info";
+  } else if (process.platform === "darwin") {
+    infoPath = "/Library/Application Support/info";
   } else {
     infoPath = path.join(os.homedir(), "info");
   }
-
   if (!fs.existsSync(infoPath)) {
     return {
       rcTag: "",
@@ -322,13 +329,11 @@ function getInfoFileData(): InfoFilesObject {
       yearModel: "",
     };
   }
-
   const readFile = (fileName: string) => {
     const fullPath = path.join(infoPath, fileName);
     if (!fs.existsSync(fullPath)) return "";
     return fs.readFileSync(fullPath, "utf-8").replace(/\r?\n/g, " ").trim();
   };
-
   return {
     rcTag: readFile("RCTag.txt"),
     department: readFile("Department.txt"),
@@ -374,43 +379,58 @@ export function buildFullItReport(data: StaticData, stats: Statistics): string {
     <tr>
       <td style="background:#fff;border-radius:0 0 8px 8px;padding:8px 12px 20px">
         <table width="100%" cellpadding="0" cellspacing="0">
-          ${section("Device", `
+          ${section(
+            "Device",
+            `
             ${row("Manufacturer", data.deviceManufacturer)}
             ${row("Model", data.deviceModel)}
             ${row("Serial Number", data.deviceSerial)}
             ${row("Year Model", data.infoFiles.yearModel)}
             ${row("RC Tag", data.infoFiles.rcTag)}
-          `)}
-          ${section("System", `
+          `,
+          )}
+          ${section(
+            "System",
+            `
             ${row("Computer Name", data.computerName)}
             ${row("Logged User", data.loggedUser)}
             ${row("Local Account", data.infoFiles.localAccount)}
             ${row("OS", `${data.osType} ${data.osVersion} (${data.osArch})`)}
             ${row("Uptime", formatUptime(data.uptime))}
-          `)}
-          ${section("Owner", `
+          `,
+          )}
+          ${section(
+            "Owner",
+            `
             ${row("Name", `${data.infoFiles.ownerFirstName} ${data.infoFiles.ownerLastName}`)}
             ${row("Email", data.infoFiles.ownerEmail)}
             ${row("Department", data.infoFiles.department)}
             ${row("Usage Type", data.infoFiles.usageType)}
             ${row("Location", `${data.infoFiles.assignedLocationBuilding} ${data.infoFiles.assignedLocationRoom}`)}
-          `)}
-          ${section("Network", `
+          `,
+          )}
+          ${section(
+            "Network",
+            `
             ${row("WiFi MAC", data.wifiMac)}
             ${row("Ethernet MAC", data.ethernetMac)}
             ${row("Local IP", data.localIp)}
             ${row("Public IP", data.publicIp)}
             ${row("Network Up", formatNetworkSpeed(stats.netUp))}
             ${row("Network Down", formatNetworkSpeed(stats.netDown))}
-          `)}
-          ${section("Hardware", `
+          `,
+          )}
+          ${section(
+            "Hardware",
+            `
             ${row("CPU", data.cpuModel)}
             ${row("CPU Usage", `${Math.round(stats.cpuUsage * 100)}%`)}
             ${row("RAM", `${data.totalMemoryGB} GB total`)}
             ${row("RAM Usage", `${Math.round(stats.ramUsage * 100)}%`)}
             ${row("Storage", `${data.totalStorage} GB total`)}
             ${row("Storage Usage", `${Math.round(stats.storageUsage * 100)}%`)}
-          `)}
+          `,
+          )}
         </table>
       </td>
     </tr>

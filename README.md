@@ -37,7 +37,7 @@ It collects system information and sends structured reports to an internal IT sy
 
 # User Guide
 
-This section explains how to use the RC System Information Dashboard.
+This section explains how to use the RC System Dashboard.
 
 ## Overview
 
@@ -284,7 +284,8 @@ Payload:
 Reads from:
 
 - Windows: `C:/info`
-- Mac/Linux: `~/info`
+- Mac: `/Library/Application Support/info`
+- Linux: `~/info`
 
 Files:
 
